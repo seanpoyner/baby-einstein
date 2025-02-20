@@ -1,0 +1,11 @@
+Query,Input_Type,Processing_Action,Expected_Output,Routing_Explanation
+"Image: A photograph of a sunset over mountains.","visual","instinct_response","Immediate emotional reaction","Visual content that triggers an instinctual aesthetic response."
+"Audio: A voice asking 'What's the weather today?'","audio","reasoning_response","Logical weather analysis","Audio input that requires analytical reasoning to answer a query."
+"Sound: A loud explosion in the distance.","sound","both_instinct_and_reasoning","Alert response with safety measures","Sound input that triggers an immediate alarm and subsequent reasoning on safety."
+"Smell: A whiff of burning material.","smell","remember_input","Recall of similar hazardous events","Smell input that should be remembered for contextual hazard assessment."
+"Touch: Feeling of a rough, textured surface.","touch","call_schema","Invoke tactile analysis schema","Touch input that requires calling a schema to classify and analyze texture."
+"Image: A diagram of a complex circuit.","visual","reasoning_response","Analyze and describe circuit components","Complex visual data that needs thoughtful reasoning rather than an instinctive reaction."
+"Audio: Recorded laughter during a conversation.","audio","instinct_response","Immediate empathetic response","An audio cue that may trigger an instinctive emotional mirroring."
+"Sound: A consistent beeping noise from a machine.","sound","instinct_response","Recognition of alert tone","Sound input that should quickly trigger an instinctive alert response."
+"Smell: Scent of freshly baked bread.","smell","instinct_response","Immediate pleasant association","A pleasant smell that typically triggers a direct, positive instinctive reaction."
+"Touch: Soft texture of a silk fabric.","touch","both_instinct_and_reasoning","Immediate comfort acknowledgment and quality analysis","Touch input that might first trigger an instinctive pleasant feeling and then a detailed texture analysis."
