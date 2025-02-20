@@ -1,0 +1,4 @@
+# Required packages for cortex.ipynb
+transformers==4.21.1
+torch==1.12.1
+datasets==1.16.0
