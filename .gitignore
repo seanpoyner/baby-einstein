@@ -175,4 +175,9 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# npm dependencies
 node_modules/
+*/node_modules/
+package-lock.json
+*/package-lock.json
