@@ -1,7 +1,3 @@
-Below is an augmented version of your README that includes an overview of what we've built so far, the architecture of the project, and details on its structure and components:
-
----
-
 # Baby Einstein  
 **Building an AI through Childhood Brain Development**
 
@@ -138,7 +134,3 @@ Contributions are welcome! Please follow these steps to help improve the project
 ## License
 
 This project is licensed under the Creative Commons Attribution-ShareAlike 4.0 International – see the LICENSE file for details.
-
----
-
-This README now not only covers the philosophical and conceptual motivations behind Baby Einstein but also gives a practical overview of our current implementation. It highlights how we emulate human brain functions in modular components, ensuring both technical robustness and a compelling narrative behind the AI’s development. Enjoy experimenting and evolving albert!

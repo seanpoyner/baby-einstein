@@ -1,6 +1,0 @@
-{
-  "python.condaPath": "/home/sean/miniconda3/bin/conda",
-  "python.terminal.shellIntegration.enabled": true,
-  "python.terminal.activateEnvironment": true,
-  "python.terminal.activateEnvInCurrentTerminal": true
-}
