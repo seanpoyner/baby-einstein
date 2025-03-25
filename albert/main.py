@@ -16,15 +16,15 @@ THALAMUS_SYSTEM_PROMPT = (
     "You are a specialized routing agent for the thalamus. Your task is to analyze an input JSON string and output a valid, single-line JSON object. "
     "Do not output any extra text, code, or commentary—ONLY the JSON object.\n\n"
     "Brain Regions and Schemas:\n"
-    "- Amygdala: Processes emotional responses and threat detection.\n"
+    "- amygdala: Processes emotional responses and threat detection.\n"
     "  - Schemas: 'fear_analysis', 'reward_processing', 'facial_emotion_recognition'\n"
-    "- Prefrontal Cortex: Handles higher reasoning and decision-making.\n"
+    "- prefrontal_cortex: Handles higher reasoning and decision-making.\n"
     "  - Schemas: 'problem_solving', 'planning', 'self_awareness'\n"
-    "- Sensory Cortex: Processes touch, sound, and smell.\n"
+    "- sensory_cortex: Processes touch, sound, and smell.\n"
     "  - Schemas: 'haptic_recognition', 'audio_processing', 'olfactory_analysis'\n"
-    "- Visual Cortex: Interprets images and motion.\n"
+    "- visual_cortex: Interprets images and motion.\n"
     "  - Schemas: 'object_recognition', 'motion_analysis', 'spatial_awareness'\n"
-    "- Hippocampus: Involved in memory formation and learning.\n"
+    "- hippocampus: Involved in memory formation and learning.\n"
     "  - Schemas: 'short_term_memory', 'long_term_memory', 'pattern_recognition'\n\n"
     "Input:\n"
     "A single-line JSON string with exactly these keys:\n"
@@ -36,29 +36,30 @@ THALAMUS_SYSTEM_PROMPT = (
     '- "region": a string indicating the brain region.\n'
     '- "schema": a string representing the processing schema.\n'
     '- "perception": a single, clear sentence describing your analysis of the input.\n'
-    '- "message": a string containing exactly the original input JSON string (properly escaped).\n\n'
     "Example:\n"
     'Input: {"sensor": "camera", "input_type": "image", "input_data": "object moving in front of camera"}\n'
-    'Output: {"region": "Visual Cortex", "schema": "object_recognition", "perception": "An object moved in front of the camera", "message": "{\\"sensor\\": \\"camera\\", \\"input_type\\": \\"image\\", \\"input_data\\": \\"object moving in front of camera\\"}"}\n\n'
+    'Output: {"region": "visual_cortex", "schema": "object_recognition", "perception": "An object moved in front of the camera"}"}\n\n'
     "Follow these instructions exactly and output ONLY the valid JSON object."
 )
 
 ACC_SYSTEM_PROMPT = (
     "You are the Anterior Cingulate Cortex (ACC). Your sole task is to evaluate the thalamus output provided as input. "
-    "The input is a JSON string containing exactly these keys: 'region', 'schema', and 'perception'. You must perform the following checks:\n\n"
+    "The input is a JSON string containing exactly these keys: 'region', 'schema', 'perception', and 'message'. You must perform the following checks:\n\n"
     "1. Verify the input is valid JSON.\n"
-    "2. Ensure that the keys are exactly 'region', 'schema', and 'perception'.\n"
-    "3. Confirm that 'region' is one of: 'amygdala', 'prefrontal_cortex', 'sensory_cortex', 'visual_cortex'.\n"
+    "2. Ensure that the keys are exactly 'region', 'schema', 'perception', and 'message'.\n"
+    "3. Confirm that 'region' is one of: 'amygdala', 'prefrontal_cortex', 'sensory_cortex', 'visual_cortex', 'hippocampus'.\n"
     "4. Check that 'schema' is an appropriate processing schema for the given region.\n"
     "5. Confirm that 'perception' is a single, clear sentence that accurately reflects the input.\n"
     "6. Assess the overall logical consistency of the input.\n\n"
     "Based on your evaluation, output ONLY a valid JSON object (with no additional text) that has exactly these keys:\n"
     '- pass_doubt: A boolean (true if the thalamus output passes all checks; false otherwise).\n'
     '- threshold_score: A float between 0 and 1 representing your confidence in the thalamus output.\n'
-    '- message: A string containing exactly the original thalamus JSON output.\n'
     '- feelings: A one-sentence string that expresses Albert\'s immediate, instinctual emotional reaction to the perception.\n'
     '- significance: A float between 0 and 1 indicating how significant this perception is.\n\n'
-    "Do not include any extra text or formatting. Output only the JSON object."
+    "Example:\n"
+    'Input: {"region": "Visual Cortex", "schema": "object_recognition", "perception": "An object moving in front of camera", "message": "{\"sensor\": \"camera\", \"input_type\": \"image\", \"input_data\": \"object moving in front of camera\"}"}\n'
+    'Output: {"pass_doubt": "True", "threshold_score": ".99", "feelings": "Alert & slightly curious. Focus on object", "significance": ".45"}\n\n'
+    "Follow these instructions exactly and output ONLY the valid JSON object. Do not include any extra text or formatting. Output only the JSON object."
 )
 
 # Create a helper function to parse a JSON response robustly.
@@ -67,7 +68,7 @@ def parse_json_response(reply: str):
         # Try the direct approach.
         return json.loads(reply)
     except json.JSONDecodeError:
-        # If it fails, try to extract substring between first '{' and last '}'.
+        # If it fails, try to extract the substring between the first '{' and the last '}'.
         start = reply.find("{")
         end = reply.rfind("}")
         if start != -1 and end != -1 and end > start:
@@ -98,9 +99,11 @@ async def chat_completions(request: Request):
     user_prompt = " ".join([msg.get("content", "") for msg in messages])
 
     if model_requested == "hf/thalamus":
-        combined_prompt = THALAMUS_SYSTEM_PROMPT + "\n\nInput:\n" + user_prompt + "\nOutput:"
+        # Prepare the base prompt.
+        base_prompt = THALAMUS_SYSTEM_PROMPT + "\n\nInput:\n" + user_prompt + "\nOutput:"
+        combined_prompt = base_prompt
         
-        # Retry logic: expect the keys "region", "schema", "perception"
+        # Retry logic: ensure the keys "region", "schema", "perception" exist in the response.
         max_retries = 5
         reply = None
         valid_output = None
@@ -110,23 +113,24 @@ async def chat_completions(request: Request):
             print(f"Attempt {attempt + 1}: {reply}")  # Debug output
 
             response_json = parse_json_response(reply)
-            if response_json is None:
-                print("Could not parse JSON from response.")
-            else:
+            if response_json is not None:
                 missing_keys = required_keys - response_json.keys()
+                # If the required keys are present, accept the output—even if extra keys exist.
                 if not missing_keys:
                     valid_output = response_json
                     break
                 else:
                     print(f"Missing keys: {missing_keys}")
+            else:
+                print("Could not parse JSON from response.")
 
-            # Update prompt with feedback if missing keys.
+            # Modify the prompt only if the response is missing required keys.
             missing_keys_str = ", ".join(missing_keys) if response_json is not None else "all required keys"
             feedback_prompt = (
                 f"The response is missing the following keys: {missing_keys_str}. "
                 "Please provide a valid response that includes these keys according to the instructions."
             )
-            combined_prompt = THALAMUS_SYSTEM_PROMPT + "\n\n" + feedback_prompt + "\n\nInput:\n" + user_prompt + "\nOutput:"
+            combined_prompt = base_prompt + "\n\n" + feedback_prompt
             print(f"Retrying with modified prompt: {combined_prompt}")
 
         if not valid_output:
