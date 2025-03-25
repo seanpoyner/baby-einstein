@@ -83,6 +83,7 @@ Below is an overview of the repository tree that outlines our project’s struct
 1. **Installation:**  
    Run the provided install script to set up the environment:  
    ```bash
+   chmod +x install.sh
    ./install.sh
    ```
    Alternatively, install Python libraries manually using:
