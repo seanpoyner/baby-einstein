@@ -144,6 +144,7 @@ venv.bak/
 
 # VS Code settings
 .vscode/
+**/.vscode/
 
 # Spyder project settings
 .spyderproject

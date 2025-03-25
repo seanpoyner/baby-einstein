@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 import uvicorn
 from io import BytesIO
 from PIL import Image
+import json
 
 # Import our custom engine classes.
 from chat_engine import ChatEngine
@@ -60,6 +61,23 @@ ACC_SYSTEM_PROMPT = (
     "Do not include any extra text or formatting. Output only the JSON object."
 )
 
+# Create a helper function to parse a JSON response robustly.
+def parse_json_response(reply: str):
+    try:
+        # Try the direct approach.
+        return json.loads(reply)
+    except json.JSONDecodeError:
+        # If it fails, try to extract substring between first '{' and last '}'.
+        start = reply.find("{")
+        end = reply.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            candidate = reply[start:end+1]
+            try:
+                return json.loads(candidate)
+            except json.JSONDecodeError:
+                return None
+        return None
+
 # Initialize FastAPI.
 app = FastAPI()
 
@@ -76,12 +94,58 @@ async def chat_completions(request: Request):
     if not model_requested or not messages:
         raise HTTPException(status_code=400, detail="Missing model or messages")
 
-    # Build the prompt by concatenating message contents.
+    # The original input as provided by the user.
     user_prompt = " ".join([msg.get("content", "") for msg in messages])
-    
+
     if model_requested == "hf/thalamus":
         combined_prompt = THALAMUS_SYSTEM_PROMPT + "\n\nInput:\n" + user_prompt + "\nOutput:"
-        reply = chat_engine.generate_reply(combined_prompt)
+        
+        # Retry logic: expect the keys "region", "schema", "perception"
+        max_retries = 5
+        reply = None
+        valid_output = None
+        required_keys = {"region", "schema", "perception"}
+        for attempt in range(max_retries):
+            reply = chat_engine.generate_reply(combined_prompt)
+            print(f"Attempt {attempt + 1}: {reply}")  # Debug output
+
+            response_json = parse_json_response(reply)
+            if response_json is None:
+                print("Could not parse JSON from response.")
+            else:
+                missing_keys = required_keys - response_json.keys()
+                if not missing_keys:
+                    valid_output = response_json
+                    break
+                else:
+                    print(f"Missing keys: {missing_keys}")
+
+            # Update prompt with feedback if missing keys.
+            missing_keys_str = ", ".join(missing_keys) if response_json is not None else "all required keys"
+            feedback_prompt = (
+                f"The response is missing the following keys: {missing_keys_str}. "
+                "Please provide a valid response that includes these keys according to the instructions."
+            )
+            combined_prompt = THALAMUS_SYSTEM_PROMPT + "\n\n" + feedback_prompt + "\n\nInput:\n" + user_prompt + "\nOutput:"
+            print(f"Retrying with modified prompt: {combined_prompt}")
+
+        if not valid_output:
+            raise HTTPException(status_code=500, detail="Failed to generate a valid response after multiple attempts.")
+
+        # Build the final output by appending the original input as the "message"
+        try:
+            original_input = json.loads(user_prompt)
+        except json.JSONDecodeError:
+            original_input = {"sensor": "unknown", "input_type": "unknown", "input_data": user_prompt}
+
+        final_output = {
+            "region": valid_output["region"],
+            "schema": valid_output["schema"],
+            "perception": valid_output["perception"],
+            "message": json.dumps(original_input)
+        }
+        reply = json.dumps(final_output)
+
     elif model_requested == "hf/acc":
         combined_prompt = ACC_SYSTEM_PROMPT + "\n\nInput:\n" + user_prompt + "\nOutput:"
         reply = chat_engine.generate_reply(combined_prompt)
@@ -91,7 +155,7 @@ async def chat_completions(request: Request):
     
     response = {
         "choices": [
-            {"message": {"content": reply}}
+            {"message": {"content": reply}},
         ]
     }
     return JSONResponse(response)
