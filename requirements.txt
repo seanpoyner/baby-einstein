@@ -1,2 +1,7 @@
 requests
-Pillow
+pillow
+fastapi
+uvicorn
+transformers
+torch
+python-multipart
