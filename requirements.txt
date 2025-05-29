@@ -4,4 +4,8 @@ fastapi
 uvicorn
 transformers
 torch
+datasets
+jupyter
+ipykernel
+accelerate
 python-multipart

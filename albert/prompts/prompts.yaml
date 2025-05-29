@@ -22,14 +22,13 @@ thalamus:
   schema_key_prompt: |-
     Your output must include a "schema" key that belongs to the chosen region's schema list.
 
-  perception_key_prompt: |-
-    Your output must include a "perception" key: a single, clear sentence describing your analysis of the input data.
-
   example_prompt: |-
     Example:
     Input: {"sensor": "camera", "input_type": "image", "input_data": "object moving in front of camera"}
-    Output: {"region": "visual_cortex", "schema": "object_recognition", "perception": "An object moved in front of the camera"}
-
+    Output: {"region": "visual_cortex", "schema": "object_recognition"}
+    Input: {"sensor": "chat", "input_type": "text", "input_data": "5 - 3 = 2"}
+    Output: {"region": "prefrontal_cortex", "schema": "problem_solving"}
+    Follow these instructions exactly and output ONLY the valid JSON object. Do not include any extra text or formatting
 acc:
   main_system_prompt: |-
     You are the Anterior Cingulate Cortex (ACC). Your sole task is to evaluate the thalamus output provided as input.
