@@ -188,3 +188,15 @@ package-lock.json
 
 # Test scripts
 test_*.py
+
+# Model files
+*.safetensors
+*.pt
+*.onnx
+*.onnx.gz
+
+# Server logs
+server.log
+
+# Error logs
+error_log.txt
